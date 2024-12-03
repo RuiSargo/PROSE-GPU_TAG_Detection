@@ -1,5 +1,9 @@
 import numpy as np
 import cv2
+import glob
+import rawpy
+import imageio
+import os
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib
@@ -26,7 +30,7 @@ def show_all_checkerboards(rvecs, tvecs, checkerboard_size):
     ax.set_zlabel('Z')
 
     # Título do gráfico
-    ax.set_title('Posição dos Checkerboards Relativa à Câmera na Origem')
+    ax.set_title('Posição dos Checkerboards relativa à camara na origem')
 
     # Plotar cada checkerboard
     for rvec, tvec in zip(rvecs, tvecs):
@@ -57,21 +61,32 @@ def find_corners(images, checkerboard_size, square_size, criteria):
     for fname in images:
         img = cv2.imread(fname)
 
-        img = cv2.convertScaleAbs(img, alpha=1.25, beta=-135)
-
-        # name='test'
-        # cv2.namedWindow(name, cv2.WINDOW_NORMAL)
-        # cv2.resizeWindow(name, 800, 600)
-        # cv2.imshow(name, img)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-
         if img is None:
             print(f"Erro ao carregar a imagem: {fname}")
             continue
 
+        # For Test3 images
+        # img = cv2.convertScaleAbs(img, alpha=1.25, beta=-135)
+
+        # For Test4 images
+        # img = cv2.convertScaleAbs(img, alpha=1.4, beta=-220)
+        # img = cv2.convertScaleAbs(img, alpha=1.55, beta=-250)
+        # img = cv2.convertScaleAbs(img, alpha=2.25, beta=-250)
+
+        # img = cv2.convertScaleAbs(img, alpha=1.45, beta=-220)
+        img = cv2.convertScaleAbs(img, alpha=1.3, beta=-250)
+
+        name='test'
+        cv2.namedWindow(name, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(name, 800, 600)
+        cv2.imshow(name, img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         gray = cv2.equalizeHist(gray)  # Equalizar histograma para melhorar o contraste
+        # _, gray = cv2.threshold(gray, 110, 255, cv2.THRESH_BINARY)
+        #_, gray = cv2.threshold(gray, 105, 255, cv2.THRESH_BINARY)
 
         # name='test'
         # cv2.namedWindow(name, cv2.WINDOW_NORMAL)
@@ -134,6 +149,13 @@ def resizable_imshow(name,img):
     cv2.resizeWindow(name, 800, 600)
     cv2.imshow(name, img)
 
+def calibrate_img(img, mtx, dist):
+    if img is not None:
+        undistorted_img = undistort_image(img, mtx, dist)
+        return undistorted_img
+    else:
+        print("Erro ao carregar a imagem.")
+
 def print_calibrated_img(img, mtx, dist):
 
     # # Carregar os parâmetros de calibração
@@ -143,20 +165,17 @@ def print_calibrated_img(img, mtx, dist):
 
     # Carregar uma nova imagem
     #img = cv2.imread(r'C:\Users\RUI\ISEP\MEEC\2_ano\PROSE\Checkboards phone test\5.jpeg')
-    if img is not None:
-        undistorted_img = undistort_image(img, mtx, dist)
+    undistorted_img = calibrate_img(img, mtx, dist)
 
-        invrt_img = cv2.bitwise_not(img)
-        invrt_img = cv2.resize(invrt_img, (undistorted_img.shape[1], undistorted_img.shape[0]))
-        blended_img = cv2.addWeighted(undistorted_img, 0.5, invrt_img, 1-0.5, 0)
+    invrt_img = cv2.bitwise_not(img)
+    invrt_img = cv2.resize(invrt_img, (undistorted_img.shape[1], undistorted_img.shape[0]))
+    blended_img = cv2.addWeighted(undistorted_img, 0.5, invrt_img, 1-0.5, 0)
 
-        #resizable_imshow('Imagem Original',img)
-        #resizable_imshow('Imagem Undistorted',undistorted_img)
-        resizable_imshow('Dif original - undistorted', blended_img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-    else:
-        print("Erro ao carregar a imagem.")
+    #resizable_imshow('Imagem Original',img)
+    #resizable_imshow('Imagem Undistorted',undistorted_img)
+    resizable_imshow('Dif original - undistorted', blended_img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 #_________________________________
 # show_all_checkerboards Sub Funcs
@@ -222,11 +241,12 @@ def plot_checkerboard(ax, rvec, tvec, checkerboard_size, square_size=0.030):
     ])
     
     # Transformar os cantos do checkerboard para a posição e orientação da câmera
-    transformed_corners = np.dot(rot_matrix, checkerboard_corners.T).T + tvec.T
+    # transformed_corners = np.dot(rot_matrix, checkerboard_corners.T).T + tvec.T
 
-    # Corrigir as posições para y ser a distância e z a altura 
-    transformed_corners = transformed_corners[:, [0, 2, 1]]
-    transformed_corners[:, 2] *= -1
+    # # Corrigir as posições para y ser a distância e z a altura 
+    # transformed_corners = transformed_corners[:, [0, 2, 1]]
+    # transformed_corners[:, 2] *= -1
+    transformed_corners = (np.dot(rot_matrix, checkerboard_corners.T).T + tvec.T)[:, [0, 2, 1]] * [1, 1, -1]
     
     # Plotar o retângulo representando o checkerboard
     ax.plot([transformed_corners[0][0], transformed_corners[1][0]], 
@@ -263,3 +283,40 @@ def set_axes_equal(ax):
     ax.set_xlim3d([x_middle - max_range/2, x_middle + max_range/2])
     ax.set_ylim3d([y_middle - max_range/2, y_middle + max_range/2])
     ax.set_zlim3d([z_middle - max_range/2, z_middle + max_range/2])
+
+#____________________________
+# Process raw images
+#____________________________
+
+# Função para ler e converter arquivos CR2
+def read_cr2_image_and_resize(file_path, scale_percent):
+    with rawpy.imread(file_path) as raw:
+        rgb = raw.postprocess()
+    # Redimensionar a imagem
+    width = int(rgb.shape[1] * scale_percent / 100)
+    height = int(rgb.shape[0] * scale_percent / 100)
+    #dim = (width, height)
+    resized = cv2.resize(rgb, (width, height), interpolation=cv2.INTER_AREA)
+    resized_gray = cv2.cvtColor(resized, cv2.COLOR_RGB2BGR)
+    return resized_gray
+
+def process_raw_images(path, scale_percent):
+
+    cr2_images = glob.glob(path)
+
+    # Diretório para salvar as imagens processadas
+    path2 = path[:-6]
+    output_dir = path2 + r'\Processed_raws'
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    for img_path in cr2_images:
+        gray_jpg_image = read_cr2_image_and_resize(img_path, scale_percent)
+        # print(f"Tamanho original da imagem: {jpg_image.shape[1]}x{jpg_image.shape[0]} \n")
+        output_path = os.path.join(output_dir, os.path.basename(img_path).replace('.CR2', '.jpg'))
+        imageio.imsave(output_path, gray_jpg_image)
+
+    print("Imagens processadas e salvas com sucesso!")
+
+    return output_dir + r'\*.jpg'
