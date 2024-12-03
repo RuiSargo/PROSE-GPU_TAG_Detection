@@ -20,7 +20,7 @@ criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 # scale_percent = 25 # 25 % 
 # processed_path = process_raw_images(raw_path, scale_percent)
 # images = glob.glob(processed_path)
-# print( len(images) )
+# print( len(images) )git
 # After raw processed to jpg
 path = r'C:\Users\RUI\ISEP\MEEC\2_ano\PROSE\Checkboards_phone_test\Test5\Processed_raws\Best\*.jpg'
 images = glob.glob(path)
