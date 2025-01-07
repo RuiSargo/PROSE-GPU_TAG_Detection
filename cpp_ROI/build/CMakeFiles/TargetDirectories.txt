@@ -1,0 +1,3 @@
+C:/Users/RUI/ISEP/MEEC/2_ano/PROSE/TrabFinal/Code/cpp_ROI/build/CMakeFiles/ArUcoDetector.dir
+C:/Users/RUI/ISEP/MEEC/2_ano/PROSE/TrabFinal/Code/cpp_ROI/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/RUI/ISEP/MEEC/2_ano/PROSE/TrabFinal/Code/cpp_ROI/build/CMakeFiles/ZERO_CHECK.dir
