@@ -1,0 +1,10 @@
+^C:\USERS\RUI\ISEP\MEEC\2_ANO\PROSE\TRABFINAL\CODE\CPP_ROI\BUILD\CMAKEFILES\4677E3A618FD8DA0E34F494A424A3B47\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/RUI/ISEP/MEEC/2_ano/PROSE/TrabFinal/Code/cpp_ROI -BC:/Users/RUI/ISEP/MEEC/2_ano/PROSE/TrabFinal/Code/cpp_ROI/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/RUI/ISEP/MEEC/2_ano/PROSE/TrabFinal/Code/cpp_ROI/build/ArUcoDetector.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
